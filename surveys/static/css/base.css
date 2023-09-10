@@ -1,0 +1,35 @@
+
+
+table, th, td {
+    padding: 8px;
+    border: 1px solid black;
+    border-collapse: collapse;
+    /* width: 100%; */
+  }
+
+td {
+    text-align: center;
+}
+
+th {
+    white-space: nowrap;
+    background-color: rgb(200, 250, 200);
+}
+
+td.td_dashboard {
+    text-align: left;
+}
+
+.form_errors {
+    color: brown;
+}
+
+a {
+    text-decoration: none;
+    color: steelblue;
+    font-weight: bold;
+}
+
+a:hover {
+    color: rgb(42, 89, 128);
+}

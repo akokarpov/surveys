@@ -1,0 +1,56 @@
+{% extends "surveys/base.html" %}
+{% block title %} Dashboard {% endblock title %}
+{% block content %}
+
+<p>Hello, {% if user.first_name %} {{ user.first_name }}{% else %} {{ user.username }}{% endif %}!</p>
+
+<table>
+    <tr>
+        <th>Survey</th>
+        <th>Raters</th>
+        <th>Open until</th>
+        <th>Date taken</th>
+        <th>Report</th>
+    </tr>
+    {% for k, v in surveys.items %}
+    <tr>
+        <td class="td_dashboard">
+            {% if v.rater.survey_progress == "completed" or not v.survey.active %}
+            {{ v.survey.name }}
+            {% if v.rater.type != 'self' %}
+            {% if v.rater.ratee_user.last_name != "" %}
+            (as {{ v.rater.ratee_user.first_name }} {{ v.rater.ratee_user.last_name }}'s {{ v.rater.type }})
+            {% else %}
+            (as {{ v.rater.ratee_user.username }}'s {{ v.rater.type }})
+            {% endif %}
+            {% endif %}
+            {% else %}
+            <a href="{% url 'surveys:take' survey_slug=v.survey.slug survey_id=v.survey.id rater_id=v.rater.id %}">
+                {{ v.survey.name }}
+                {% if v.rater.type != 'self' %}
+                {% if v.rater.ratee_user.last_name != "" %}
+                (as {{ v.rater.ratee_user.first_name }} {{ v.rater.ratee_user.last_name }}'s {{ v.rater.type }})
+                {% else %}(as {{ v.rater.ratee_user.username }}'s {{ v.rater.type }})
+                {% endif %}
+                {% endif %}
+            </a>
+            {% endif %}
+        </td>
+        <td>
+            {% if v.survey.multi_rater and v.rater.type == 'self' and v.survey.active %}<a href="#">Raters</a>{% endif %}
+        </td>
+        <td>{{ v.survey.end_date|date:"d.m.Y" }}</td>
+        <td>
+            {% if v.rater.survey_progress == "completed" %}
+            {{ v.rater.survey_date_taken|date:"d.m.Y" }}
+            {% endif %}
+        </td>
+        <td>
+            {% if v.rater.type == 'self' and v.rater.survey_progress == "completed" %}
+            <a href="#">Report</a>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock content %}

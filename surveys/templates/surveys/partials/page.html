@@ -1,0 +1,25 @@
+<p>Page {{ rater.survey_page_number }} of {{ survey.pages.count }}</p>
+
+<form>
+    {% for field in form.visible_fields %}
+    <h2>{{ field.label }}</h2>
+    {{ field.errors }}
+    {{ field }}    
+    {% endfor %}
+
+    <br>
+    
+    <button hx-get="{% url 'surveys:page' survey_id=survey.id rater_id=rater.id %}" hx-target="#main" name="back" {% if rater.survey_page_number == 1 %}disabled{% endif %}>Back</button>
+
+    <button id="next" type="submit" hx-target="#main" hx-swap="innerHTML" hx-post="{% url 'surveys:page' survey_id=survey.id rater_id=rater.id %}" method="post" name="next">{% if rater.survey_page_number == survey.pages.count %}Finish{% else %}Next{% endif %}</button>
+</form>
+
+<p>
+    You are completing {{ survey.name }} for
+    {% if rater.type == 'self' %}yourself.
+    {% elif rater.type == 'manager' %}your report {{ rater.ratee_full_name_or_username }}.
+    {% elif rater.type == 'peer' %}your colleague {{ rater.ratee_full_name_or_username }}.
+    {% elif rater.type == 'report' %}your manager {{ rater.ratee_full_name_or_username }}.
+    {% endif %}
+    The survey is active until {{ survey.end_date|date:"l, d.m.Y, H:i A e" }}.
+</p>

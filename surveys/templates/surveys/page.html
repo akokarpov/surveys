@@ -1,0 +1,8 @@
+
+  {% csrf_token %}
+  {% for question in form %}
+      <p><b>{{ forloop.counter }}. {{ question.label }}</b></p>
+      {% for choice in question %}
+          <span>{{ choice }} {{ question.get_choices_display }}</span>
+      {% endfor %}
+  {% endfor %}

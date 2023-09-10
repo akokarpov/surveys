@@ -1,0 +1,13 @@
+
+{{ page_obj }}
+{{ questions }}
+
+<nav>
+    <ul>
+        {% for p in page_obj.paginator.page_range %}
+        <li>
+            <a href="?page={{ p }}">{{ p }} </a>
+        </li>
+        {% endfor %}
+    </ul>
+</nav>

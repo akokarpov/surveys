@@ -1,0 +1,9 @@
+{% extends "surveys/base.html" %}
+{% block title %} {{ survey.name }} {% endblock title %}
+
+{% block content %}
+
+<div id="main" hx-get="{% url 'surveys:page' survey_id=survey.id rater_id=rater.id %}" hx-trigger="load">
+</div>
+
+{% endblock content %}
