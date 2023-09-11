@@ -107,9 +107,8 @@ def page_view(request, survey_id, rater_id):
         form = SurveyPageForm(survey, rater, request.path)
 
     context = {'form': form, 'survey': survey, 'rater': rater}
-    return render(request, "surveys/partials/page.html", context)
-
-
+    response = render(request, "surveys/partials/page.html", context)
+    return response
 
 def take_view(request, survey_slug, survey_id, rater_id):
 
