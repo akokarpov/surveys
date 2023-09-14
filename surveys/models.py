@@ -84,6 +84,7 @@ class Response(models.Model):
     rater               = models.ForeignKey(Rater, related_name='responses', on_delete=models.CASCADE)
     question            = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice              = models.ForeignKey(Choice, on_delete=models.CASCADE, blank=True, null=True)
+    multichoices        = models.ManyToManyField(Choice, blank=True, related_name='multichoices')
     text                = models.TextField(blank=True)
     added               = models.DateTimeField(auto_now_add=True)        
 

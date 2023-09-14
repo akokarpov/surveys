@@ -1,19 +1,3 @@
-<p>Page {{ rater.survey_page_number }} of {{ survey.pages.count }}</p>
-
-<form>
-    {% for field in form.visible_fields %}
-    <h2>{{ field.label }}</h2>
-    {{ field.errors }}
-    {{ field }}    
-    {% endfor %}
-
-    <br>
-    
-    <button hx-get="{% url 'surveys:page' survey_id=survey.id rater_id=rater.id %}" hx-target="#main" name="back" {% if rater.survey_page_number == 1 %}disabled{% endif %}>Back</button>
-
-    <button id="next" type="submit" hx-target="#main" hx-swap="innerHTML" hx-post="{% url 'surveys:page' survey_id=survey.id rater_id=rater.id %}" method="post" name="next">{% if rater.survey_page_number == survey.pages.count %}Finish{% else %}Next{% endif %}</button>
-</form>
-
 <p>
     You are completing {{ survey.name }} for
     {% if rater.type == 'self' %}yourself.
@@ -23,3 +7,60 @@
     {% endif %}
     The survey is active until {{ survey.end_date|date:"l, d.m.Y, H:i A e" }}.
 </p>
+
+<p>Page {{ rater.survey_page_number }} of {{ survey.pages.count }}</p>
+
+<form>
+    {% for field in form.visible_fields %}
+    <div id="qbox_{{ field.auto_id }}" {% if field.errors %} class="qbox-errors" {% elif field.initial != None and field.initial != "" %} class="qbox-done" {% else %} class="qbox" {% endif %}>
+        {% if field.errors %}
+            <div id="qbox_errs_{{ field.auto_id }}" class="errorlist">{{ field.errors }}</div>
+        {% endif %}
+    <div>{{ field.label }}</div>
+    <br>
+    {% if field.widget_type == 'radioselect' or field.widget_type == 'checkboxselectmultiple' %}
+        {% for choice in field.field.choices %}
+        <div> 
+            <input type="{% if field.widget_type == 'radioselect' %}radio{% else %}checkbox{% endif %}" name="{{ field.name }}" id="{{ field.auto_id }}_{{ choice.0 }}" value="{{ choice.0 }}" {% if field.initial == choice.0 and field.widget_type == 'radioselect'  or choice.0 in field.initial and field.widget_type == 'checkboxselectmultiple' %} checked {% endif %} {% if field.field.required %} required {% endif %} hx-post="{% url 'surveys:page' survey_id=survey.id rater_id=rater.id %}" hx-trigger="change"
+            hx-on:click="
+            htmx.addClass(htmx.find('#qbox_{{ field.auto_id }}'), 'qbox-done');
+            if (htmx.find('#qbox_errs_{{ field.auto_id }}')) {
+                htmx.remove(htmx.find('#qbox_errs_{{ field.auto_id }}'));
+            }
+            if (htmx.find('#qbox_{{ field.auto_id }}')) {
+                htmx.removeClass(htmx.find('#qbox_{{ field.auto_id }}'), 'qbox-errors');
+            }
+            document.getElementById('{{ field.auto_id }}_{{ choice.0 }}').removeAttribute('hx-on:click');
+            document.getElementById('{{ field.auto_id }}_{{ choice.0 }}').removeAttribute('hx-post');
+            document.getElementById('{{ field.auto_id }}_{{ choice.0 }}').removeAttribute('hx-trigger');"
+            hx-swap="none">
+            <label for="{{ field.auto_id }}_{{ choice.0 }}">{{ choice.1 }}</label>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif field.widget_type == 'textarea' %}
+        <div>
+            <label for="{{ field.auto_id }}"></label>
+            <textarea cols="45" rows="5" maxlength="{{ field.field.widget.attrs.maxlength }}" placeholder="{{ field.field.widget.attrs.placeholder }}" name="{{ field.name }}" id="{{ field.auto_id }}" {% if field.field.required %} required {% endif %} hx-post="{% url 'surveys:page' survey_id=survey.id rater_id=rater.id %}" hx-trigger="change"
+            hx-on:click="
+            htmx.addClass(htmx.find('#qbox_{{ field.auto_id }}'), 'qbox-done');
+            if (htmx.find('#qbox_errs_{{ field.auto_id }}')) {
+                htmx.remove(htmx.find('#qbox_errs_{{ field.auto_id }}'));
+            }
+            if (htmx.find('#qbox_{{ field.auto_id }}')) {
+                htmx.removeClass(htmx.find('#qbox_{{ field.auto_id }}'), 'qbox-errors');
+            }
+            document.getElementById('{{ field.auto_id }}').removeAttribute('hx-on:click');
+            document.getElementById('{{ field.auto_id }}').removeAttribute('hx-post');
+            document.getElementById('{{ field.auto_id }}').removeAttribute('hx-trigger');"
+            hx-swap="none">{{ field.value }}</textarea> 
+        </div>
+        {% endif %}
+    </div>
+    <br>
+    {% endfor %}
+
+    <button class="btn btn-secondary" hx-get="{% url 'surveys:page' survey_id=survey.id rater_id=rater.id %}" hx-target="#main" name="back" {% if rater.survey_page_number == 1 %}disabled{% endif %} type="button">Back</button>
+
+    <button {% if rater.survey_page_number == survey.pages.count %}class="btn btn-primary"{% else %}class="btn btn-secondary"{% endif %} id="next" type="submit" hx-target="#main" hx-swap="innerHTML show:.errorlist:top" hx-post="{% url 'surveys:page' survey_id=survey.id rater_id=rater.id %}" method="post" name="next">{% if rater.survey_page_number == survey.pages.count %}Finish{% else %}Next{% endif %}</button>
+</form>

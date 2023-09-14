@@ -31,6 +31,7 @@ class ResponseAdmin(admin.ModelAdmin):
 class QuestionAdmin(admin.ModelAdmin):
    list_display = ['id', 'label', 'required', 'type']
    list_editable = ['label', 'required', 'type']
+   filter_horizontal = ('choices',)
 
 @admin.register(Choice)
 class ChoiceAdmin(admin.ModelAdmin):

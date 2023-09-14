@@ -1,7 +1,7 @@
 
 from django import forms
 from django.core.exceptions import ObjectDoesNotExist
-from .models import Response
+from .models import Response, Choice
 
 class SurveyPageForm(forms.Form):
 
@@ -14,8 +14,7 @@ class SurveyPageForm(forms.Form):
         for question in questions:
             
             choices = [(choice.id, choice.label) for choice in question.choices.all()]
-            error_messages = {'required': 'This is a mandatory question to answer.'}
-            attrs = {"hx-post": f"{path}", "hx-trigger": "change", "novalidate": True}
+            error_messages = {'required': 'This question is required!'}
             question_label = question.label
             selected_choice_id = None
             text = ""
@@ -25,6 +24,8 @@ class SurveyPageForm(forms.Form):
                     response = responses.get(rater_id=rater.id, question_id=question.id)
                     if response.choice:
                         selected_choice_id = response.choice.id
+                    if response.multichoices.all():
+                        selected_choice_id = [choice.id for choice in response.multichoices.all()]
                     if response.text:
                         text = response.text
                 except ObjectDoesNotExist:
@@ -34,8 +35,8 @@ class SurveyPageForm(forms.Form):
                 question_label = f"{question.label}*"                
 
             if question.type == 'radio':
-                self.fields[f'radio_{question.id}'] = forms.ChoiceField(widget=forms.RadioSelect(attrs=attrs), choices=choices, required=question.required, label=question_label, initial=selected_choice_id, error_messages=error_messages)
+                self.fields[f'radio_{question.id}'] = forms.ChoiceField(widget=forms.RadioSelect, choices=choices, required=question.required, label=question_label, initial=selected_choice_id, error_messages=error_messages)
             elif question.type == 'multi':
-                self.fields[f'multi_{question.id}'] = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(attrs=attrs), choices=choices, required=question.required, initial=selected_choice_id, label=question_label, error_messages=error_messages)
+                self.fields[f'multi_{question.id}'] = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple, choices=choices, required=question.required, label=question_label, error_messages=error_messages, initial=selected_choice_id)
             elif question.type == 'open':
-                self.fields[f'open_{question.id}'] = forms.CharField(widget=forms.Textarea(attrs={'placeholder': '1000 symbols max.', **attrs}), max_length=1000, required=question.required, label=question_label, initial=text, error_messages=error_messages)
+                self.fields[f'open_{question.id}'] = forms.CharField(widget=forms.Textarea(attrs={'placeholder': '1000 symbols max.'}), max_length=1000, required=question.required, label=question_label, initial=text, error_messages=error_messages)

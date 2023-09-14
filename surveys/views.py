@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 
 from django.views.generic import TemplateView, ListView
 
-from .models import Survey, Rater, Response
+from .models import Survey, Rater, Response, Choice
 from .forms import SurveyPageForm
 
 class IndexView(TemplateView):
@@ -45,6 +45,63 @@ def page_view(request, survey_id, rater_id):
     survey = get_object_or_404(Survey, id=survey_id)
     rater = get_object_or_404(Rater, id=rater_id)
 
+    def save_response(data_items):
+        for field, value in data_items:
+            if re.search('(radio_)\d+', field):
+                data = {
+                    'rater_id': rater_id,                     
+                    'question_id': field[6:],
+                    'choice_id': None if value == "" else value,
+                    'multichoices': None,
+                    'text': "",
+                }
+            elif re.search('(multi_)\d+', field):
+                multichoices = Choice.objects.all().filter(pk__in=request.POST.getlist(field))
+                data = {
+                    'rater_id': rater_id,                     
+                    'question_id': field[6:],
+                    'multichoices': None if value == [] else multichoices,
+                    'choice_id': None,
+                    'text': "",
+                    } 
+            elif re.search('(open_)\d+', field):
+                data = {
+                    'rater_id': rater_id,                     
+                    'question_id': field[5:],
+                    'text': value,
+                    'multichoices': None,
+                    'choice_id': None,
+                }
+            else:
+                data = None
+            if data:
+                try:
+                    response = Response.objects.get(
+                        rater_id=data['rater_id'],
+                        question_id=data ['question_id']
+                        )
+                    response.choice_id = data['choice_id']
+                    response.text = data['text']
+                    response.save()
+                    if data['multichoices']:
+                        response.multichoices.set(data['multichoices'])
+                    else:
+                        response.multichoices.clear()
+                except Response.DoesNotExist:
+                    response = Response(
+                        rater_id=data['rater_id'],
+                        question_id=data ['question_id'],
+                        choice_id=data['choice_id'],
+                        text=data['text'])
+                    response.save()
+                    if data['multichoices']:
+                        response.multichoices.set(data['multichoices'])
+                    else:
+                        response.multichoices.clear()
+                if rater.survey_progress == 'not started':
+                    rater.survey_progress = 'incompleted'
+                    rater.save()
+
     if request.method == 'GET':
         if rater.survey_progress == "completed" or rater not in survey.raters.all().filter(rater_user_id=request.user.id):
             raise Http404
@@ -53,10 +110,11 @@ def page_view(request, survey_id, rater_id):
                 if rater.survey_page_number > 1:
                     rater.survey_page_number -= 1
                     rater.save()
-
+    
     if request.method == 'POST':
         form = SurveyPageForm(survey, rater, request.path, request.POST)
         if form.is_valid() and 'next' in request.POST:
+            save_response(form.cleaned_data.items())    
             if rater.survey_page_number == survey.pages.all().count():
                 rater.survey_progress = 'completed'
                 rater.survey_date_taken = datetime.datetime.now(datetime.timezone.utc)
@@ -67,49 +125,13 @@ def page_view(request, survey_id, rater_id):
                 rater.save()
                 form = SurveyPageForm(survey, rater, request.path)
         else:
-            for field_name, value in request.POST.items():
-                if re.search('(radio_)\d+', field_name):
-                        data = {
-                            'rater_id': rater_id,                     
-                            'question_id': field_name[6:],
-                            'choice_id': value,
-                            'text': '',
-                        }
-                elif re.search('(multi_)\d+', field_name):
-                    data = []
-                    for choice in value:
-                        data.append(
-                            {
-                        'rater_id': rater_id,                     
-                        'question_id': field_name[6:],
-                        'choice_id': choice,
-                        'text': '',
-                    }
-                    )
-                elif re.search('(open_)\d+', field_name):
-                    data = {
-                        'rater_id': rater_id,                     
-                        'question_id': field_name[5:],
-                        'choice_id': None,
-                        'text': value,
-                    }
-                else:
-                    data = None
-                if data:
-                    if type(data) == list:
-                        for entry in data:
-                            Response.objects.update_or_create(rater_id=entry['rater_id'], question_id=entry['question_id'], defaults=entry)
-                    elif type(data) == dict:
-                        Response.objects.update_or_create(rater_id=data['rater_id'], question_id=data['question_id'], defaults=data)
-                    rater.survey_progress = 'incompleted'
-                    rater.save()
+            save_response(form.cleaned_data.items())
     else:
         form = SurveyPageForm(survey, rater, request.path)
 
     context = {'form': form, 'survey': survey, 'rater': rater}
-    return render(request, "surveys/partials/page.html", context)
-
-
+    response = render(request, "surveys/partials/page.html", context)
+    return response
 
 def take_view(request, survey_slug, survey_id, rater_id):
 
