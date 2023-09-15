@@ -30,9 +30,7 @@
             if (htmx.find('#qbox_{{ field.auto_id }}')) {
                 htmx.removeClass(htmx.find('#qbox_{{ field.auto_id }}'), 'qbox-errors');
             }
-            document.getElementById('{{ field.auto_id }}_{{ choice.0 }}').removeAttribute('hx-on:click');
-            document.getElementById('{{ field.auto_id }}_{{ choice.0 }}').removeAttribute('hx-post');
-            document.getElementById('{{ field.auto_id }}_{{ choice.0 }}').removeAttribute('hx-trigger');"
+            "
             hx-swap="none">
             <label for="{{ field.auto_id }}_{{ choice.0 }}">{{ choice.1 }}</label>
         </div>
@@ -50,9 +48,7 @@
             if (htmx.find('#qbox_{{ field.auto_id }}')) {
                 htmx.removeClass(htmx.find('#qbox_{{ field.auto_id }}'), 'qbox-errors');
             }
-            document.getElementById('{{ field.auto_id }}').removeAttribute('hx-on:click');
-            document.getElementById('{{ field.auto_id }}').removeAttribute('hx-post');
-            document.getElementById('{{ field.auto_id }}').removeAttribute('hx-trigger');"
+            "
             hx-swap="none">{{ field.value }}</textarea> 
         </div>
         {% endif %}

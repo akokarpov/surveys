@@ -45,33 +45,42 @@ def page_view(request, survey_id, rater_id):
     survey = get_object_or_404(Survey, id=survey_id)
     rater = get_object_or_404(Rater, id=rater_id)
 
-    def save_response(data_items):
+    def save_response(data_items, form_valid_and_next=False):
         for field, value in data_items:
             if re.search('(radio_)\d+', field):
-                data = {
-                    'rater_id': rater_id,                     
-                    'question_id': field[6:],
-                    'choice_id': None if value == "" else value,
-                    'multichoices': None,
-                    'text': "",
-                }
+                if form_valid_and_next and not value == "":
+                    data = None
+                else:
+                    data = {
+                        'rater_id': rater_id,                     
+                        'question_id': field[6:],
+                        'choice_id': None if value == "" else value,
+                        'multichoices': None,
+                        'text': "",
+                    }
             elif re.search('(multi_)\d+', field):
-                multichoices = Choice.objects.all().filter(pk__in=request.POST.getlist(field))
-                data = {
-                    'rater_id': rater_id,                     
-                    'question_id': field[6:],
-                    'multichoices': None if value == [] else multichoices,
-                    'choice_id': None,
-                    'text': "",
-                    } 
+                if form_valid_and_next and not value == []:
+                    data = None
+                else:
+                    multichoices = Choice.objects.all().filter(pk__in=request.POST.getlist(field))
+                    data = {
+                        'rater_id': rater_id,                     
+                        'question_id': field[6:],
+                        'multichoices': None if value == [] else multichoices,
+                        'choice_id': None,
+                        'text': "",
+                        } 
             elif re.search('(open_)\d+', field):
-                data = {
-                    'rater_id': rater_id,                     
-                    'question_id': field[5:],
-                    'text': value,
-                    'multichoices': None,
-                    'choice_id': None,
-                }
+                if form_valid_and_next and value == "":
+                    data = None
+                else:
+                    data = {
+                        'rater_id': rater_id,                     
+                        'question_id': field[5:],
+                        'text': value,
+                        'multichoices': None,
+                        'choice_id': None,
+                    }
             else:
                 data = None
             if data:
@@ -114,7 +123,7 @@ def page_view(request, survey_id, rater_id):
     if request.method == 'POST':
         form = SurveyPageForm(survey, rater, request.path, request.POST)
         if form.is_valid() and 'next' in request.POST:
-            save_response(form.cleaned_data.items())    
+            save_response(form.cleaned_data.items(), form_valid_and_next=True)    
             if rater.survey_page_number == survey.pages.all().count():
                 rater.survey_progress = 'completed'
                 rater.survey_date_taken = datetime.datetime.now(datetime.timezone.utc)
