@@ -1,9 +1,9 @@
 <p>
     You are completing {{ survey.name }} for
     {% if rater.type == 'self' %}yourself.
-    {% elif rater.type == 'manager' %}your report {{ rater.ratee_full_name_or_username }}.
-    {% elif rater.type == 'peer' %}your colleague {{ rater.ratee_full_name_or_username }}.
-    {% elif rater.type == 'report' %}your manager {{ rater.ratee_full_name_or_username }}.
+    {% elif rater.type == 'manager' %}your report {{ rater.ratee_name_or_email }}.
+    {% elif rater.type == 'peer' %}your colleague {{ rater.ratee_name_or_email }}.
+    {% elif rater.type == 'report' %}your manager {{ rater.ratee_name_or_email }}.
     {% endif %}
     The survey is active until {{ survey.end_date|date:"l, d.m.Y, H:i A e" }}.
 </p>

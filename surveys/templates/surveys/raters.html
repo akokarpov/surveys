@@ -1,0 +1,60 @@
+{% extends "surveys/base.html" %}
+{% block title %}Raters Dashboard{% endblock title %}
+
+{% block content %}
+
+<h1>Raters Dashboard</h1>
+
+{% if rater.cohort %}
+<div><b>Organization:</b> {{ rater.cohort.client.name }}</div>
+<div><b>Cohort:</b> {{ rater.cohort.name }}</div>
+{% endif %}
+<div><b>Survey:</b> {{ survey.name }}</div>
+<div><b>Open until:</b> {{ survey.end_date|date:"l, d.m.Y, H:i A e" }}</div>
+
+<br>
+
+<table class="table table-sm table-striped">
+  <thead>
+    <tr class="table-info">
+      {% if not survey.hide_raters %}
+      <th scope="col">Rater name</th>
+      <th scope="col">Email address</th>
+      {% endif %}
+      <th scope="col">Rater type</th>
+      <th scope="col">Survey progress</th>
+      <th scope="col">Date taken</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for rater in raters_list %}
+    <tr>
+      {% if not survey.hide_raters %}
+      <td scope="row">
+        {{ rater.rater_name_or_email }}
+      </td>
+      <td>
+        {{ rater.rater_user.email }}            
+      </td>
+      {% endif %}
+      <td>
+        {{ rater.type|title }}{% if rater.type == 'self' %} (You) {% endif %}
+      </td>
+      <td>
+        {% if rater.survey_progress == 'unstarted' %}🔴 {{ rater.survey_progress }}
+          {% if rater.type == 'self' %}
+            (<a href="{% url 'surveys:take' survey_id=survey.id rater_id=rater.id %}">take</a>)
+          {% endif %}
+        {% elif rater.survey_progress == 'incomplete' %}🟡 {{ rater.survey_progress }}
+        {% elif rater.survey_progress == 'finished' %}🟢 {{ rater.survey_progress }}
+        {% endif %}
+      </td>
+      <td>
+        {{ rater.survey_date_taken|date:"d.m.Y" }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock content %}

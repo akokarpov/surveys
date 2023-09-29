@@ -3,7 +3,7 @@
 
 {% block content %}
 
-<div id="main" hx-get="{% url 'surveys:page' survey_id=survey.id rater_id=rater.id %}" hx-trigger="load">
+<div id="main" hx-get="{% url 'surveys:page' survey_id rater_id %}" hx-trigger="load">
 </div>
 
 {% endblock content %}

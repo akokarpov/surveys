@@ -1,3 +1,14 @@
+ul {
+    margin: 0px;
+}
+
+
+.custom-file-upload {
+    border: 2px solid #000000;
+    display: inline-block;
+    padding: 1px 6px;
+    cursor: pointer;
+}
 
 textarea {
     width: 100%;
@@ -5,15 +16,20 @@ textarea {
   }
 
   .errorlist {
+    margin-top: 0;
     padding: 0;
     list-style: none;
     font-weight: bold;
 }
 
+.bg-myinfo {
+    background-color: #CFF4FC;;
+}
+
 .qbox {
     border-left: 5px solid lightseagreen;
     padding: 10px;
-    background-color: lightcyan;
+    background-color: #CFF4FC;
 }
 
 .qbox-errors {

@@ -1,7 +1,45 @@
-
+import uuid
 from django.db import models
-from django.conf import settings
 from django.template.defaultfilters import truncatechars
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+
+class UserManager(BaseUserManager):
+
+    use_in_migrations = True
+
+    def _create_user(self, email, password, **extra_fields):
+        if not email:
+            raise ValueError('The given email must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(email, password, **extra_fields)
+
+    def create_superuser(self, email, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self._create_user(email, password, **extra_fields)
+
+class User(AbstractUser):
+    id                  = models.UUIDField(primary_key=True, default = uuid.uuid4, editable = False, unique=True)
+    email               = models.EmailField(unique=True)
+    username            = None
+    USERNAME_FIELD      = 'email'
+    REQUIRED_FIELDS     = []
+    objects             = UserManager()
+    
 
 class Client(models.Model):
     name                = models.CharField(max_length=250)
@@ -10,11 +48,11 @@ class Client(models.Model):
         return self.name
 
 class Cohort(models.Model):
-    name                = models.CharField(max_length=250)
+    name                = models.CharField(max_length=250, unique=True)
     client              = models.ForeignKey(Client, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.name} ({self.client.name})'
+        return f'{self.name}'
     
 class Choice(models.Model):
     label               = models.CharField(max_length=250)
@@ -38,13 +76,14 @@ class Question(models.Model):
         return f'{self.label}'
 
 class Survey(models.Model):
+    id                  = models.UUIDField(primary_key=True, default = uuid.uuid4, editable = False, unique=True)
     name                = models.CharField(max_length=250)
-    slug                = models.SlugField(max_length=250)
     pages               = models.ManyToManyField('Page', blank=True)
     start_date          = models.DateTimeField(blank=True, null=True)
     end_date            = models.DateTimeField(blank=True, null=True)
     multi_rater         = models.BooleanField(default=False)
     active              = models.BooleanField(default=False)
+    hide_raters         = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         return f'{self.name}'
@@ -58,27 +97,36 @@ class Rater(models.Model):
         REPORT          = 'report', 'report'
     
     class Progress(models.TextChoices):
-        NOT_STARTED     = 'not started', 'not started'
-        COMPLETED       = 'completed', 'completed'
-        INCOMPLETED     = 'incompleted', 'incompleted'
+        UNSTARTED       = 'unstarted', 'unstarted'
+        INCOMPLETE      = 'incomplete', 'incomplete'
+        FINISHED        = 'finished', 'finished'
 
-    rater_user          = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='rater_users', on_delete=models.CASCADE)    
-    ratee_user          = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='ratee_users', on_delete=models.CASCADE)
+    id                  = models.UUIDField(primary_key=True, default = uuid.uuid4, editable = False, unique=True)
+    rater_user          = models.ForeignKey(User, related_name='rater_users', on_delete=models.CASCADE)    
+    ratee_user          = models.ForeignKey(User, related_name='ratee_users', on_delete=models.CASCADE)
     type                = models.CharField(max_length=250, default=Type.SELF, choices=Type.choices)
     survey              = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name='raters')
-    survey_progress     = models.CharField(max_length=250, default=Progress.NOT_STARTED, choices=Progress.choices)
+    survey_progress     = models.CharField(max_length=250, default=Progress.UNSTARTED, choices=Progress.choices)
     survey_date_taken   = models.DateTimeField(blank=True, null=True)
     survey_page_number  = models.SmallIntegerField(blank=True, null=True, default=1)
+    cohort              = models.ForeignKey(Cohort, on_delete=models.CASCADE, blank=True, null=True)
 
     @property
-    def ratee_full_name_or_username(self):
+    def ratee_name_or_email(self):
         if self.ratee_user.first_name and self.ratee_user.last_name:
             return f"{self.ratee_user.first_name} {self.ratee_user.last_name}"
         else:
-            return f"{self.ratee_user.username}"
+            return f"{self.ratee_user.email}"
+    
+    @property
+    def rater_name_or_email(self):
+        if self.rater_user.first_name and self.rater_user.last_name:
+            return f"{self.rater_user.first_name} {self.rater_user.last_name}"
+        else:
+            return f"{self.rater_user.email}"
 
     def __str__(self) -> str:
-        return f"{self.rater_user.username} {self.ratee_user.username}'s {self.type}"
+        return f"{self.rater_user.email} {self.ratee_user.email}'s {self.type}"
 
 class Response(models.Model):
     rater               = models.ForeignKey(Rater, related_name='responses', on_delete=models.CASCADE)
@@ -89,7 +137,7 @@ class Response(models.Model):
     added               = models.DateTimeField(auto_now_add=True)        
 
     def __str__(self) -> str:
-        return f"{self.rater.survey.name} {self.rater.ratee_user.username}'s {self.rater.type} {self.rater.rater_user.username}"
+        return f"{self.rater.survey.name} {self.rater.ratee_user.email}'s {self.rater.type} {self.rater.rater_user.email}"
     
     @property
     def rater_input(self):
@@ -97,8 +145,8 @@ class Response(models.Model):
 
 class Page(models.Model):
     title               = models.CharField(max_length=250, blank=True)
-    questions           = models.ManyToManyField(Question, blank=True)
-    number              = models.SmallIntegerField(blank=True, null=True)
+    questions           = models.ManyToManyField(Question)
+    number              = models.SmallIntegerField()
 
     def __str__(self) -> str:
         return f"{self.title}"

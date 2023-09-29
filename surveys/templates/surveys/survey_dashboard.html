@@ -1,0 +1,88 @@
+
+{% extends "surveys/base.html" %}
+{% load static %}
+{% block title %}Survey Dashboard{% endblock title %}
+
+{% block content %}
+
+<h1>{{ survey.name }}</h1>
+
+{% if raters  %}
+
+<form method="post" enctype="multipart/form-data">
+{% csrf_token %}
+
+<a href="{% url 'surveys:download_raters' survey_id=survey.id %}"><button class="btn btn-outline-primary" type="button">Download raters</button></a>
+
+    
+    <button class="btn btn-outline-primary" type="submit">Upload raters</button>
+    <label class="btn btn-outline-secondary" for="file-upload" class="custom-file-upload">Select XLS file</label>
+    <input id="file-upload" type="file" name="file" accept=".xlsx, .xls" required hidden>
+    <br>
+    <br>
+    {% if errors_list %}
+    <div class="qbox-errors">
+      <ul>
+        {% for error in errors_list %}
+        <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    <br>
+    <!-- <label class="form-control" for="search"></label> -->
+    <input type="search" class="form-control"
+          name="search" placeholder="Begin typing to search anything in this table..." 
+          hx-get="{% url 'surveys:search_raters' survey_id=survey.id %}" 
+          hx-trigger="keyup changed delay:500ms, search, load, deleted_raters from:body" 
+          hx-target="#search-results" 
+          hx-indicator=".htmx-indicator"
+          id="search"> 
+    <span class="htmx-indicator">Searching...</span>       
+  
+</form>
+
+  <table class="table table-sm table-striped">
+      <thead>
+        <tr>
+            <th scope="col">Rater first name</th>
+            <th scope="col">Rater last name</th>
+            <th scope="col">Rater email</th>
+            <th scope="col">Rater type</th>
+            <th scope="col">Ratee email</th>
+            <th scope="col">Client Name</th>
+            <th scope="col">Cohort Name</th>
+            <th scope="col">Survey Progress</th>
+            <th scope="col">Survey Date taken</th>
+            <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="search-results"></tbody>
+  </table>
+  {% else %}
+
+  <button class="btn btn-outline-primary" type="submit">Upload raters</button>
+    <label class="btn btn-outline-secondary" for="file-upload" class="custom-file-upload">Select XLS file</label>
+    <input id="file-upload" type="file" name="file" accept=".xlsx, .xls" required hidden>
+    <br>
+    <br>
+  <div class="d-flex">
+No raters added yet!
+  </div>
+        
+        {% endif %}
+
+{% endblock content %}
+
+<!-- <a href="#">
+    <button type="button">➕</button>
+</a>
+<br> 
+Send test email to:
+<br> 
+Welcome invitation:
+<br> 
+Survey name: -->
+
+<!-- <button class="btn btn-outline-primary btn-sm" style="padding: 1px;" type="button" hx-swap="none" hx-post="{% url 'surveys:raters-dashboard' survey_id=survey.id rater_id=rater.id %}" name="invite_btn" value="{{ rater.id }}">invite</button>
+<button class="btn btn-outline-secondary btn-sm" style="padding: 1px;" type="button" hx-swap="none" hx-post="{% url 'surveys:raters-dashboard' survey_id=survey.id rater_id=rater.id %}" name="remind_btn" value="{{ rater.id }}">remind</button> -->

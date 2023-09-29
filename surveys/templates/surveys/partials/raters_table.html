@@ -1,0 +1,44 @@
+{% for rater in raters %}
+        <tr id="row_rater_table_{{ rater.id }}">
+            <td>
+                {{ rater.rater_user.first_name }}
+            </td>
+            <td>
+                {{ rater.rater_user.last_name }}
+            </td>
+            <td>
+                {{ rater.rater_user.email }}
+            </td>
+            <td>
+                {{ rater.type | title }}
+            </td>
+            <td>
+                {{ rater.ratee_user.email }}
+            </td>
+            <td>
+                {{ rater.cohort.client }}
+            </td>
+            <td>
+                {{ rater.cohort }}
+            </td>
+            <td>
+                {% if rater.survey_progress == 'unstarted' %}🔴 {{ rater.survey_progress }}
+                {% elif rater.survey_progress == 'incomplete' %}🟡 {{ rater.survey_progress }}
+                {% elif rater.survey_progress == 'finished' %}🟢 {{ rater.survey_progress }}
+                {% endif %}
+            </td>
+            <td>
+                {{ rater.survey_date_taken|date:"d.m.Y" }}
+            </td>
+            <td>    
+                <button hx-get="{% url 'surveys:survey_dashboard' survey_id=survey.id %}?deleted_rater_id={{ rater.id }}" hx-target="#row_rater_table_{{ rater.id }}" type="button" class="btn btn-outline-link btn-sm" hx-swap="delete"
+                {% if survey.multi_rater and rater.type == 'self' %}
+                hx-confirm="Warning! You cannot 'undo' this action! Do you confirm deleting the 'self' rater with any related raters and existing survey responses?"
+                {% else %}    
+                hx-confirm="Warning! You cannot 'undo' this action! do you confirm deleting this rater with any existing survey responses?"
+                {% endif %}>❌</button>
+                <a href="#"><button class="btn btn-outline-link btn-sm" type="button">✏️</button></a>
+            </td>
+            
+        </tr>       
+        {% endfor %}
